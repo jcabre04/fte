@@ -35,52 +35,34 @@ class TestFTE:
         assert len(new_book.items) == len(test_book.items)
         assert len(new_book.toc) == len(test_book.toc)
 
-    def test_fte_bad_url_scheme(self) -> None:
-        url_pieces = urlparse(self.STORY_URL)
-        url_pieces = url_pieces._replace(scheme="fake")
-        bad_url = urlunparse(url_pieces)
-        print(bad_url)
-        with pytest.raises(
-            Exception,
-            match=escape("Invalid url. Needs one: ('http', 'https')"),
-        ):
+    def _test_fte_bad_url(self, bad_url, ex_msg_pattern) -> None:
+        with pytest.raises(Exception, match=ex_msg_pattern):
             fte(bad_url)
+
+    def test_fte_bad_url_scheme(self) -> None:
+        url_pieces = urlparse(self.STORY_URL)._replace(scheme="fake")
+        ex_msg_pattern = escape("Invalid url. Needs one: ('http', 'https')")
+        self._test_fte_bad_url(urlunparse(url_pieces), ex_msg_pattern)
 
     def test_fte_bad_url_netloc(self) -> None:
-        url_pieces = urlparse(self.STORY_URL)
-        url_pieces = url_pieces._replace(netloc="fake")
-        bad_url = urlunparse(url_pieces)
-
-        with pytest.raises(
-            Exception,
-            match=escape(
-                "Invalid url. Needs one: ('forums.spacebattles.com', 'fanfiction.net')"  # noqa
-            ),
-        ):
-            fte(bad_url)
+        url_pieces = urlparse(self.STORY_URL)._replace(netloc="fake")
+        ex_msg_pattern = escape(
+            "Invalid url. Needs one: ('forums.spacebattles.com', 'fanfiction.net')"  # noqa
+        )
+        self._test_fte_bad_url(urlunparse(url_pieces), ex_msg_pattern)
 
     def test_fte_bad_url_no_path(self) -> None:
         url_pieces = urlparse(self.STORY_URL)
         url_pieces = url_pieces._replace(path="")
-        bad_url = urlunparse(url_pieces)
-
-        with pytest.raises(
-            Exception,
-            match=escape(
-                "Invalid url. Needs story path (part after url's .com; .net; etc)"  # noqa
-            ),
-        ):
-            fte(bad_url)
+        ex_msg_pattern = escape(
+            "Invalid url. Needs story path (part after url's .com; .net; etc)"  # noqa
+        )
+        self._test_fte_bad_url(urlunparse(url_pieces), ex_msg_pattern)
 
     def test_fte_bad_url_fake_path(self) -> None:
         url_pieces = urlparse(self.STORY_URL)
         url_pieces = url_pieces._replace(path="fake")
-        bad_url = urlunparse(url_pieces)
-
-        with pytest.raises(
-            Exception,
-            match=escape(
-                "https://forums.spacebattles.com story unreachable. Status code: 404"  # noqa
-            ),
-        ):
-            fte(bad_url)
+        ex_msg_pattern = escape(
+            "https://forums.spacebattles.com story unreachable. Status code: 404"  # noqa
+        )
+        self._test_fte_bad_url(urlunparse(url_pieces), ex_msg_pattern)
