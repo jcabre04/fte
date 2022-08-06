@@ -8,7 +8,6 @@ import requests
 from ebooklib import epub
 from bs4.element import Tag
 from bs4 import BeautifulSoup
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
@@ -27,7 +26,7 @@ def _print(msg: str) -> None:
 
 
 # TODO: remove ebook writing from this function. Make new one with adjustable
-# path.
+# destination path.
 def _create_epub(
     title: str, author: str, summary: Tag, chapters: CHAPTER
 ) -> None:
@@ -42,8 +41,8 @@ def _create_epub(
     # add metadata
     book.set_identifier(book_id)
     book.set_cover(
-        "./covers/spacebattles.png",
-        open("./covers/spacebattles.png", "rb").read(),
+        "covers/spacebattles.png",
+        open("covers/spacebattles.png", "rb").read(),
         create_page=True,
     )
     book.set_title(title)
@@ -140,7 +139,7 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
 
     if base_html.status_code != 200:
         raise Exception(
-            f"{SP_SOURCE} unreachable. Status code: {base_html.status_code}"
+            f"{SP_SOURCE} story unreachable. Status code: {base_html.status_code}"  # noqa
         )
 
     base_parser = BeautifulSoup(base_html.text, "html.parser")
@@ -185,7 +184,7 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
 
     _print(f"Total chapters: {len(chapter_urls)}")
     if total_chapters != len(chapter_urls):
-        core_msg = "Missing chapteres detected\n\tfound"
+        core_msg = "Missing chapters detected\n\tfound"
         raise Exception(
             f"{core_msg}: {len(chapter_urls)} | total: {total_chapters}"
         )
