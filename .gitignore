@@ -1,0 +1,10 @@
+__pycache__
+
+.git
+
+venv
+
+geckodriver.log
+geckodriver.exe
+
+*.epub
