@@ -26,19 +26,19 @@ def _print(msg: str) -> None:
 
 
 # TODO: remove ebook writing from this function. Make new one with adjustable
-# destination path.
+# destination path
 def _create_epub(
     title: str, author: str, summary: Tag, chapters: CHAPTER
 ) -> None:
-    """Assemble data into ebook format (.epub) and write it to file."""
-    # to ensure every book has unique id, making hash with title and author
+    """Following the ebooklib docs, assemble and write ebook"""
+    # To ensure every book has unique id, making hash with title and author
     book_id = hashlib.sha256(
         bytes(f"{title} by {author}", "utf-8")
     ).hexdigest()
 
     book = epub.EpubBook()
 
-    # add metadata
+    # Add metadata
     book.set_identifier(book_id)
     book.set_cover(
         "covers/spacebattles.png",
@@ -49,7 +49,7 @@ def _create_epub(
     book.set_language("en")
     book.add_author(author)
 
-    # add content
+    # Add content
     intro = epub.EpubHtml(
         title="Summary",
         file_name="summary.xhtml",
@@ -72,7 +72,7 @@ def _create_epub(
 
         book.add_item(ch_temp)
 
-    # create table of contents and navigational components
+    # Create table of contents and navigational components
     book.toc = chapter_objects
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
@@ -106,7 +106,7 @@ def _get_webdriver() -> WebDriver:
 
 def _fanfiction(story_url: str) -> Tuple[str, str, str, str]:
     """Scrape fanfiction.net for the data to make an ebook. Return it"""
-    # future implementation of fanfiction.net here
+    # Future implementation of fanfiction.net here
     return "title", "author", "summary", "chapters"
 
 
@@ -132,7 +132,7 @@ def _spacebattles_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
 
 
 def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
-    """Scrape spacebattles.com for the data to make an ebook. Return it"""
+    """Scrape spacebattles.com for the data to make an ebook. Return it all"""
     SP_SOURCE = r"https://forums.spacebattles.com"
 
     base_html = requests.get(story_url)
@@ -151,12 +151,12 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
     driver = _get_webdriver()
     driver.get(SP_SOURCE + threadmarks_button["href"])
 
-    # fanfics with 100+ chapters need to click a button to reveal the rest
+    # Stories with 100+ chapters need to click a button to reveal the rest
     try:
         driver.find_element(
             By.XPATH, "//div[@data-xf-click='threadmark-fetcher']"
         ).click()
-    # fanfics with <= 100 chapters will not have the button above
+    # Stories with <= 100 chapters don't have this button. Exception expected
     except NoSuchElementException:
         pass
 
@@ -218,6 +218,7 @@ def _validate_url_pieces(pieces: ParseResult) -> None:
         )
 
 
+# TODO: Add support for other browsers like Chrome and Edge?
 def _gather_story_data(
     url_pieces: ParseResult, full_url: str
 ) -> Tuple[str, str, Tag, CHAPTER]:
@@ -232,19 +233,19 @@ def _gather_story_data(
     return WEBSITES[url_pieces.netloc](full_url)
 
 
-# TODO: Add support for other browsers like Chrome and Edge?
 def fte(url: str, verbosity: bool = False) -> None:
+    """The start function. Validates url, gathers data, and creates ebook"""
     global VERBOSITY
     url_pieces = urlparse(url)
     _validate_url_pieces(url_pieces)
 
     VERBOSITY = verbosity
 
-    title, author, summary, chapters = _gather_story_data(url_pieces, url)
-    _create_epub(title, author, summary, chapters)
+    _create_epub(*_gather_story_data(url_pieces, url))
 
 
 if __name__ == "__main__":
+    """Cli interface for direct execution"""
     parser = argparse.ArgumentParser(
         description="""Turn fanfictions into ebooks(.epub) with their url.
         Requires the host machine to have firefox (browser) installed
