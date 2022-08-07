@@ -1,10 +1,14 @@
-__pycache__
-
+# files to ignore
+.env
 .git
 
-venv
+*.epub
+
+__pycache__
 
 geckodriver.log
 geckodriver.exe
 
-*.epub
+# directories to ignore
+venv/
+.tmpdir*/
