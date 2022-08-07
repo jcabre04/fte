@@ -1,6 +1,7 @@
 import re
 import hashlib
 import argparse
+from pathlib import Path
 from urllib.parse import urlparse, ParseResult
 from typing import List, Tuple
 
@@ -25,8 +26,6 @@ def _print(msg: str) -> None:
         print(msg)
 
 
-# TODO: remove ebook writing from this function. Make new one with adjustable
-# destination path
 def _create_epub(
     title: str, author: str, summary: Tag, chapters: CHAPTER
 ) -> None:
@@ -90,10 +89,9 @@ def _create_epub(
 
     book.spine = ["nav"] + chapter_objects
 
-    # Write to file
     name = re.sub("[ /]+", "-", f"{title} by {author}.epub")
-    _print(f"Writing epub: {name}")
-    epub.write_epub(name, book, {})
+
+    return book, name
 
 
 def _get_webdriver() -> WebDriver:
@@ -218,6 +216,11 @@ def _validate_url_pieces(pieces: ParseResult) -> None:
         )
 
 
+def _validate_dst_dir(dst_dir: str) -> None:
+    if not Path(dst_dir).is_dir():
+        raise Exception("Invalid destination directory.")
+
+
 # TODO: Add support for other browsers like Chrome and Edge?
 def _gather_story_data(
     url_pieces: ParseResult, full_url: str
@@ -233,15 +236,27 @@ def _gather_story_data(
     return WEBSITES[url_pieces.netloc](full_url)
 
 
-def fte(url: str, verbosity: bool = False) -> None:
+def _write_ebook(ebook: epub.EpubBook, name: str, dst_dir: str) -> None:
+    """Writes the ebook to the specified directory"""
+    _print(f"Writing epub: {name}")
+    epub.write_epub(name, ebook, {})
+
+    book = Path(name)
+    new_book = Path(f"{dst_dir}/{name}")
+    book.replace(new_book)
+
+
+def fte(url: str, verbosity: bool = False, dst_dir: str = ".") -> None:
     """The start function. Validates url, gathers data, and creates ebook"""
     global VERBOSITY
-    url_pieces = urlparse(url)
-    _validate_url_pieces(url_pieces)
-
     VERBOSITY = verbosity
 
-    _create_epub(*_gather_story_data(url_pieces, url))
+    url_pieces = urlparse(url)
+    _validate_url_pieces(url_pieces)
+    _validate_dst_dir(dst_dir)
+
+    ebook, name = _create_epub(*_gather_story_data(url_pieces, url))
+    _write_ebook(ebook, name, dst_dir)
 
 
 if __name__ == "__main__":
@@ -266,5 +281,13 @@ if __name__ == "__main__":
         help="Enables verbosity (printing extra information)",
     )
 
+    parser.add_argument(
+        "-d",
+        "--destination",
+        help="The directory to write the ebook to.",
+        default=".",
+    )
+
     args = parser.parse_args()
-    fte(args.url, verbosity=args.verbosity)
+
+    fte(args.url, verbosity=args.verbosity, dst_dir=args.destination)

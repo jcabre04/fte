@@ -14,16 +14,20 @@ class TestFTE:
     STORY_URL = "https://forums.spacebattles.com/threads/thrice-born-battletech-complete.1015854/"  # noqa
     EBOOK_NAME = "Thrice-Born-[BattleTech]-[Complete]-by-notes.epub"
 
+    def setup_class(self):
+        self.tmp_dir = Path("tmp_testing_dir")
+        self.tmp_dir.mkdir(exist_ok=True)
+
     def teardown_class(self):
         Path(self.EBOOK_NAME).unlink(missing_ok=True)
+        for item in self.tmp_dir.iterdir():
+            if item.is_file():
+                item.unlink()
+        self.tmp_dir.rmdir()
 
-    def test_fte_typical_use(self) -> None:
-        fte(self.STORY_URL)
-
-        assert Path(self.EBOOK_NAME).is_file()
-
-        new_book = epub.read_epub(self.EBOOK_NAME)
-        test_book = epub.read_epub("tests/pre_made_ebook")
+    def _compare_books(self, new_book_name, test_book_name) -> None:
+        new_book = epub.read_epub(new_book_name)
+        test_book = epub.read_epub(test_book_name)
 
         new_author = new_book.get_metadata("DC", "creator")[0][0]
         test_author = test_book.get_metadata("DC", "creator")[0][0]
@@ -34,6 +38,20 @@ class TestFTE:
         assert new_book.spine == test_book.spine
         assert len(new_book.items) == len(test_book.items)
         assert len(new_book.toc) == len(test_book.toc)
+
+    def test_fte_typical_use(self) -> None:
+        fte(self.STORY_URL)
+
+        assert Path(self.EBOOK_NAME).is_file()
+        self._compare_books(self.EBOOK_NAME, "tests/pre_made_ebook")
+
+    def test_fte_save_to_dir(self) -> None:
+        fte(self.STORY_URL, dst_dir=self.tmp_dir.name)
+
+        assert (self.tmp_dir / self.EBOOK_NAME).is_file()
+        self._compare_books(
+            f"{self.tmp_dir.name}/{self.EBOOK_NAME}", "tests/pre_made_ebook"
+        )
 
     def _test_fte_bad_url(self, bad_url, ex_msg_pattern) -> None:
         with pytest.raises(Exception, match=ex_msg_pattern):
