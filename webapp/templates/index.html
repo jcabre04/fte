@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="card">
+    <h3 class="card-header">Enter a story url below!</h3>
+    <div class="card-body">
+      <div class="card-text">
+        <form action="" method="post" novalidate>
+            {{ form.hidden_tag() }}
+            <p class="input-group mb3">
+                {{ form.url.label(**{'class': 'input-group-text'}) }}<br>
+                {{ form.url(**{'class': 'form-control'}) }}<br>
+                {% for error in form.url.errors %}
+                <span style="color: red;">[{{ error }}]</span>
+                {% endfor %}
+            </p>
+            {% for subfield in form.options %}
+              <p class="form-check-inline form-switch">
+                <tr>
+                    <td>{{ subfield(**{'class': 'form-check-input'}) }}</td>
+                    <td>{{ subfield.label(**{'class': 'form-check-label'}) }}</td>
+                </tr>
+              </p>
+            {% endfor %}
+            {% for error in form.options.errors %}
+            <span style="color: red;">[{{ error }}]</span>
+            {% endfor %}
+            <p>{{ form.submit(**{'class': 'btn btn-primary btn-lg'}) }}</p>
+        </form>
+      </div>
+    </div>
+  </div>
+{% endblock %}
