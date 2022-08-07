@@ -1,3 +1,4 @@
+from os import environ
 from pathlib import Path
 from hashlib import sha256
 from datetime import datetime as dt
@@ -12,7 +13,7 @@ def _cleanup_tmp_dirs():
     root = Path(".")
     for tmp_dir in root.iterdir():
         conditions = [tmp_dir.is_dir()]
-        conditions.append("tmpdir" in tmp_dir.name)
+        conditions.append(".tmpdir" in tmp_dir.name)
         conditions.append((tmp_dir / "tmp_ready").is_file())
         conditions.append(not (tmp_dir / "tmp_destroying").is_file())
         if all(conditions):
@@ -30,7 +31,7 @@ def index():
     if form.validate_on_submit():
         _cleanup_tmp_dirs()
 
-        tmp = f"tmpdir_{sha256(str(dt.now()).encode('utf-8')).hexdigest()}"
+        tmp = f".tmpdir_{sha256(str(dt.now()).encode('utf-8')).hexdigest()}"
         tmp_dir = Path(tmp)
         tmp_dir.mkdir()
 
@@ -42,7 +43,11 @@ def index():
                         return send_file(item.resolve(), as_attachment=True)
 
             elif form.options.data == "upload":
-                fte(form.url.data, verbosity=True, dst_dir=".")
+                fte(
+                    form.url.data,
+                    verbosity=True,
+                    dst_dir=environ["UPLOAD_DIR"],
+                )
 
         except Exception as e:
             flash(str(e))
