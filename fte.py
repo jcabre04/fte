@@ -189,8 +189,6 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
     else:
         _print("Same amount!!")
 
-    # TODO make this a for loop with added functionatlity:
-    #   - Try-except blocks that attempt each chapter 3 times before quitting
     chapters = [
         _spacebattles_get_chapter(SP_SOURCE + link["href"])
         for link in chapter_urls
@@ -221,7 +219,8 @@ def _validate_dst_dir(dst_dir: str) -> None:
         raise Exception("Invalid destination directory.")
 
 
-# TODO: Add support for other browsers like Chrome and Edge?
+# TODO: Add support for other browsers like Chrome and Edge
+# TODO: Add support for other websites
 def _gather_story_data(
     url_pieces: ParseResult, full_url: str
 ) -> Tuple[str, str, Tag, CHAPTER]:
