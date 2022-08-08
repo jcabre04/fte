@@ -1,0 +1,11 @@
+.git/
+.pytest_cache/
+.tmpdir*/
+__pycache__/
+test/
+venv/
+.dockerignore
+.env
+.gitignore
+Dockerfile
+gecko*
