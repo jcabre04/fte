@@ -10,7 +10,7 @@ from fte import fte
 
 
 def _cleanup_tmp_dirs():
-    root = Path(".")
+    root = Path(environ["WORKING_DIR"])
     for tmp_dir in root.iterdir():
         conditions = [tmp_dir.is_dir()]
         conditions.append(".tmpdir" in tmp_dir.name)
@@ -32,12 +32,12 @@ def index():
         _cleanup_tmp_dirs()
 
         tmp = f".tmpdir_{sha256(str(dt.now()).encode('utf-8')).hexdigest()}"
-        tmp_dir = Path(tmp)
+        tmp_dir = Path(f'{environ["WORKING_DIR"]}/{tmp}')
         tmp_dir.mkdir()
 
         try:
             if form.options.data == "download":
-                fte(form.url.data, verbosity=True, dst_dir=tmp_dir.name)
+                fte(form.url.data, verbosity=True, dst_dir=tmp_dir.resolve())
                 for item in tmp_dir.iterdir():
                     if item.is_file() and "tmp" not in item.name:
                         return send_file(item.resolve(), as_attachment=True)

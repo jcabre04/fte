@@ -1,6 +1,8 @@
 import re
 import hashlib
 import argparse
+from os import devnull, environ
+from shutil import move
 from pathlib import Path
 from urllib.parse import urlparse, ParseResult
 from typing import List, Tuple
@@ -11,7 +13,8 @@ from bs4.element import Tag
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.options import Options as FO
+from selenium.webdriver.chrome.options import Options as CO
 from selenium.webdriver.firefox.webdriver import WebDriver
 from selenium.common.exceptions import NoSuchElementException
 
@@ -94,11 +97,28 @@ def _create_epub(
     return book, name
 
 
-def _get_webdriver() -> WebDriver:
+def _get_webdriver(log_dest=devnull, browser="firefox") -> WebDriver:
     """Return a webdriver for webscraping"""
-    options = Options()
-    options.headless = True
-    driver = webdriver.Firefox(options=options)
+    if "LOG_DEST" in environ:
+        log_dest = environ["LOG_DEST"]
+
+    if "WEB_DRIVER" in environ:
+        browser = environ["WEB_DRIVER"]
+
+    if browser == "firefox":
+        options = FO()
+        options.headless = True
+        driver = webdriver.Firefox(service_log_path=log_dest, options=options)
+    elif browser == "chrome":
+        options = CO()
+        options.add_argument("--headless")
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        chrome_prefs = {}
+        chrome_prefs["profile.default_content_settings"] = {"images": 2}
+        options.experimental_options["prefs"] = chrome_prefs
+        driver = webdriver.Chrome(service_log_path=log_dest, options=options)
+
     return driver
 
 
@@ -239,10 +259,7 @@ def _write_ebook(ebook: epub.EpubBook, name: str, dst_dir: str) -> None:
     """Writes the ebook to the specified directory"""
     _print(f"Writing epub: {name}")
     epub.write_epub(name, ebook, {})
-
-    book = Path(name)
-    new_book = Path(f"{dst_dir}/{name}")
-    book.replace(new_book)
+    move(name, f"{dst_dir}/{name}")
 
 
 def fte(url: str, verbosity: bool = False, dst_dir: str = ".") -> None:
