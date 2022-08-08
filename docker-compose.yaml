@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  fte:
+    image: jcabre04/fte
+    container_name: fte-app
+    restart: unless-stopped
+    environment:
+      - UPLOAD_DIR=/app/uploads/
+      - WORKING_DIR=/app/
+      - WEB_DRIVER=chrome
+    ports:
+      - "42005:42005"
+    volumes:
+      - ./uploads:/app/uploads
