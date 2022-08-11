@@ -1,6 +1,7 @@
 import re
 import hashlib
 import argparse
+from time import sleep
 from os import devnull, environ
 from shutil import move
 from pathlib import Path
@@ -10,7 +11,7 @@ from typing import List, Tuple
 import requests
 from ebooklib import epub
 from bs4.element import Tag
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Comment
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options as FO
@@ -30,7 +31,7 @@ def _print(msg: str) -> None:
 
 
 def _create_epub(
-    title: str, author: str, summary: Tag, chapters: CHAPTER
+    title: str, author: str, summary: Tag, chapters: CHAPTER, cover: str
 ) -> None:
     """Following the ebooklib docs, assemble and write ebook"""
     # To ensure every book has unique id, making hash with title and author
@@ -43,8 +44,8 @@ def _create_epub(
     # Add metadata
     book.set_identifier(book_id)
     book.set_cover(
-        "covers/spacebattles.png",
-        open("covers/spacebattles.png", "rb").read(),
+        cover,
+        open(cover, "rb").read(),
         create_page=True,
     )
     book.set_title(title)
@@ -122,10 +123,79 @@ def _get_webdriver(log_dest=devnull, browser="firefox") -> WebDriver:
     return driver
 
 
-def _fanfiction(story_url: str) -> Tuple[str, str, str, str]:
-    """Scrape fanfiction.net for the data to make an ebook. Return it"""
-    # Future implementation of fanfiction.net here
-    return "title", "author", "summary", "chapters"
+def _archiveofourown_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
+    """Scrape the data for one chapter in archiveofourown. Return it"""
+    sleep(2)  # archive of our own times out if too many requests occur quickly
+    chapter_html = requests.get(chapter_url)
+
+    if chapter_html.status_code == 429:  # too many requests
+        sleep(300)  # sleep for 5 minutes
+        chapter_html = requests.get(chapter_url)
+    elif chapter_html.status_code != 200:
+        raise Exception(
+            f"{chapter_url} unreachable. Code: {chapter_html.status_code}"
+        )
+
+    chapter_parser = BeautifulSoup(chapter_html.text, "html.parser")
+
+    chapter_name = [
+        re.match(".*>(.*)</option", str(ch)).group(1)
+        for ch in chapter_parser.find(id="selected_id").children
+        if 'selected="selected"' in str(ch)
+    ][0]
+
+    chapter = ""
+    try:
+        for tag in chapter_parser.find(class_="notes module"):
+            chapter += str(tag)
+    # some chapters do not have a notes section. In that case, skip
+    except TypeError:
+        pass
+    chapter += "\n<br>\n"
+    for tag in chapter_parser.find("div", id="chapters"):
+        chapter += str(tag)
+
+    chapter_content = BeautifulSoup(chapter, "html.parser")
+
+    for tag in chapter_content(text=lambda text: isinstance(text, Comment)):
+        tag.extract()
+
+    _print(f"Processed chapter: {chapter_name}")
+    return (chapter_name, chapter_content)
+
+
+def _archiveofourown(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
+    """Scrape archiveofourown for the data to make an ebook. Return it all"""
+    AO3_SOURCE = "https://archiveofourown.org"
+
+    base_html = requests.get(story_url)
+
+    if base_html.status_code != 200:
+        raise Exception(
+            f"{AO3_SOURCE} story unreachable. Please try again. Status code: {base_html.status_code}"  # noqa
+        )
+
+    base_parser = BeautifulSoup(base_html.text, "html.parser")
+
+    story_id = re.match(r".+works/(\d+)/.+", story_url).group(1)
+    chapter_ids = [
+        re.match('.*"(\\d+)".*', str(chapter).strip()).group(1)
+        for chapter in base_parser.find(id="selected_id").children
+        if re.match('.*"(\\d+)".*', str(chapter).strip())
+    ]
+
+    title = base_parser.find(class_="title heading").text.strip()
+    author = base_parser.find(class_="byline heading").text.strip()
+    summary = base_parser.find(class_="summary module")
+
+    chapters = [
+        _archiveofourown_get_chapter(
+            f"{AO3_SOURCE}/works/{story_id}/chapters/{ch_id}"
+        )
+        for ch_id in chapter_ids
+    ]
+
+    return title, author, summary, chapters
 
 
 def _spacebattles_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
@@ -151,7 +221,7 @@ def _spacebattles_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
 
 def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
     """Scrape spacebattles.com for the data to make an ebook. Return it all"""
-    SP_SOURCE = r"https://forums.spacebattles.com"
+    SP_SOURCE = "https://forums.spacebattles.com"
 
     base_html = requests.get(story_url)
 
@@ -220,7 +290,7 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
 def _validate_url_pieces(pieces: ParseResult) -> None:
     """Ensure url contains the correct and allowed components"""
     VALID_SCHEMES = ("http", "https")
-    VALID_NETLOCS = ("forums.spacebattles.com", "fanfiction.net")
+    VALID_NETLOCS = ("forums.spacebattles.com", "archiveofourown.org")
 
     if pieces.scheme not in VALID_SCHEMES:
         raise Exception(f"Invalid url. Needs one: {VALID_SCHEMES}")
@@ -248,7 +318,7 @@ def _gather_story_data(
     # By using a dictionary, will avoid long if-else chain
     WEBSITES = {
         "forums.spacebattles.com": _spacebattles,
-        "fanfiction.net": _fanfiction,
+        "archiveofourown.org": _archiveofourown,
         # Add more functions here as more sites are supported
     }
 
@@ -262,6 +332,15 @@ def _write_ebook(ebook: epub.EpubBook, name: str, dst_dir: str) -> None:
     move(name, f"{dst_dir}/{name}")
 
 
+def _get_cover_name(url: str) -> str:
+    url_pieces = urlparse(url)
+    COVERS = {
+        "forums.spacebattles.com": "covers/spacebattles.png",
+        "archiveofourown.org": "covers/archiveofourown.png",
+    }
+    return COVERS[url_pieces.netloc]
+
+
 def fte(url: str, verbosity: bool = False, dst_dir: str = ".") -> None:
     """The start function. Validates url, gathers data, and creates ebook"""
     global VERBOSITY
@@ -271,7 +350,8 @@ def fte(url: str, verbosity: bool = False, dst_dir: str = ".") -> None:
     _validate_url_pieces(url_pieces)
     _validate_dst_dir(dst_dir)
 
-    ebook, name = _create_epub(*_gather_story_data(url_pieces, url))
+    cover = _get_cover_name(url)
+    ebook, name = _create_epub(*_gather_story_data(url_pieces, url), cover)
     _write_ebook(ebook, name, dst_dir)
 
 
