@@ -3,7 +3,7 @@ fte is a simple tools that creates ebooks from online fanfiction by scraping the
 
 PLEASE NOTE: the webapp and docker image use Flask's development server to serve content. Do not use it for high volume or insecure traffic. 
 
-Also, you will need to download the latest gecko / chrome web driver and place it in fte's root directory
+Also, if you use this tool through the cli, you will need a firefox / chrome on your computer and need to download the latest gecko / chrome web driverto the code's directory.
 
 ## Standalone cli command
 Attempting to run fte.py without any input will fail and produce a menu explaining how to use it. You can find more details through the help flag: `-h`
@@ -17,25 +17,29 @@ python fte.py -h
 ![help flag](https://i.imgur.com/xVernrA.png)
 
 ## Local webapp
-To run fte in a local webapp, install the python packages in `requirements.txt` and start up Flask. Also, you may change some of the functionality with the appropriate environemntal variables in an .env file:
+To run fte in a local webapp, install the python packages in `requirements.txt` and start up Flask as shown below.
 ### cli commands
 ```
 python -m pip install -r requirements.txt
 
 python -m flask --app -e .env application.py run -p <PORT> 
 ```
+
 ### .env file
+Some functionality is customizable with the appropriate environemntal variables in an .env file:
 ```
 UPLOAD_DIR="./uploads"    # Which directory to upload .epub files to
 WORKING_DIR="."           # Which directory to temporarily use for downloading ebooks from your browser
 WEB_DRIVER=firefox        # Which web driver to use. You will need the corresponding browser. firefox or chrome
 FLASK_DEBUG=False
 ```
+
 ### webapp
+On success, you can reach fte's web application through localhost:\<PORT\>
 ![web app](https://i.imgur.com/KJizwMQ.png)
 
 ## Docker image and container
-To use docker, execute the following docker run command. The mounted directory will store the files uploaded using the webapp.
+To use docker, execute the following docker run command. The mounted directory will store the files uploaded. Downloading a file will place it in your browser's download directory.
 ```
 docker run --name fte-app -p 42005:42005 --mount type=bind,source="$pwd"/uploads,target=/app/uploads --rm -d jcabre04/fte
 ```
