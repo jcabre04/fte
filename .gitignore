@@ -12,3 +12,4 @@ geckodriver.exe
 # directories to ignore
 venv/
 .tmpdir*/
+.vscode/
