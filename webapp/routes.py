@@ -6,7 +6,7 @@ from flask import render_template, redirect, url_for, send_file, flash
 
 from webapp import app
 from webapp.forms import StoryURLForm
-from fte import fte
+from fte.fte import main
 
 
 def _cleanup_tmp_dirs():
@@ -37,13 +37,13 @@ def index():
 
         try:
             if form.options.data == "download":
-                fte(form.url.data, verbosity=True, dst_dir=tmp_dir.resolve())
+                main(form.url.data, verbosity=True, dst_dir=tmp_dir.resolve())
                 for item in tmp_dir.iterdir():
                     if item.is_file() and "tmp" not in item.name:
                         return send_file(item.resolve(), as_attachment=True)
 
             elif form.options.data == "upload":
-                fte(
+                main(
                     form.url.data,
                     verbosity=True,
                     dst_dir=environ["UPLOAD_DIR"],
