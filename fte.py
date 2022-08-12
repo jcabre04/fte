@@ -1,6 +1,6 @@
 import re
-import hashlib
 import argparse
+from hashlib import sha256
 from time import sleep
 from os import devnull, environ
 from shutil import move
@@ -35,9 +35,7 @@ def _create_epub(
 ) -> None:
     """Following the ebooklib docs, assemble and write ebook"""
     # To ensure every book has unique id, making hash with title and author
-    book_id = hashlib.sha256(
-        bytes(f"{title} by {author}", "utf-8")
-    ).hexdigest()
+    book_id = sha256(bytes(f"{title} by {author}", "utf-8")).hexdigest()
 
     book = epub.EpubBook()
 
@@ -132,9 +130,8 @@ def _archiveofourown_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
         sleep(300)  # sleep for 5 minutes
         chapter_html = requests.get(chapter_url)
     elif chapter_html.status_code != 200:
-        raise Exception(
-            f"{chapter_url} unreachable. Code: {chapter_html.status_code}"
-        )
+        msg = f"{chapter_url} unreachable. Code: {chapter_html.status_code}"
+        raise Exception(msg)
 
     chapter_parser = BeautifulSoup(chapter_html.text, "html.parser")
 
@@ -188,12 +185,10 @@ def _archiveofourown(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
     author = base_parser.find(class_="byline heading").text.strip()
     summary = base_parser.find(class_="summary module")
 
-    chapters = [
-        _archiveofourown_get_chapter(
-            f"{AO3_SOURCE}/works/{story_id}/chapters/{ch_id}"
-        )
-        for ch_id in chapter_ids
-    ]
+    chapters = []
+    for ch_id in chapter_ids:
+        url = f"{AO3_SOURCE}/works/{story_id}/chapters/{ch_id}"
+        chapters.append(_archiveofourown_get_chapter(url))
 
     return title, author, summary, chapters
 
@@ -205,9 +200,8 @@ def _spacebattles_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
     chapter_html = requests.get(chapter_url)
 
     if chapter_html.status_code != 200:
-        raise Exception(
-            f"{chapter_url} unreachable. Code: {chapter_html.status_code}"
-        )
+        msg = f"{chapter_url} unreachable. Code: {chapter_html.status_code}"
+        raise Exception(msg)
 
     chapter_page_parser = BeautifulSoup(chapter_html.text, "html.parser")
     chapter_parser = chapter_page_parser.find("article", id=f"js-{post_id}")
@@ -234,7 +228,7 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
 
     threadmarks_button = base_parser.find(
         class_="button--link menuTrigger button"
-    )
+    )  # noqa
 
     driver = _get_webdriver()
     driver.get(SP_SOURCE + threadmarks_button["href"])
@@ -275,13 +269,13 @@ def _spacebattles(story_url: str) -> Tuple[str, str, Tag, CHAPTER]:
         core_msg = "Missing chapters detected\n\tfound"
         raise Exception(
             f"{core_msg}: {len(chapter_urls)} | total: {total_chapters}"
-        )
+        )  # noqa
     else:
         _print("Same amount!!")
 
     chapters = [
         _spacebattles_get_chapter(SP_SOURCE + link["href"])
-        for link in chapter_urls
+        for link in chapter_urls  # noqa
     ]
 
     return title, author, summary, chapters
