@@ -46,7 +46,7 @@ def _archiveofourown_get_chapter(chapter_url: str) -> Tuple[str, Tag]:
 
     chapter_content = BeautifulSoup(chapter, "html.parser")
 
-    for tag in chapter_content(text=lambda text: isinstance(text, Comment)):
+    for tag in chapter_content.find_all(lambda tag: isinstance(tag, Comment)):
         tag.extract()
 
     fte_print(f"\tFinished: {chapter_name}", settings.verbosity)
