@@ -58,6 +58,4 @@ def index():
         return redirect(url_for("index"))
 
     form.options.data = "download"
-    return render_template(
-        "index.html", title="Fanfiction-to-Ebook", form=form
-    )
+    return render_template("index.html", title="Fanfiction-to-Ebook", form=form)  # noqa

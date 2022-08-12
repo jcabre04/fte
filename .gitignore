@@ -13,3 +13,4 @@ geckodriver.exe
 venv/
 .tmpdir*/
 .vscode/
+.pytest_cache

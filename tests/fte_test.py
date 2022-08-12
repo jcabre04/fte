@@ -5,7 +5,7 @@ from urllib.parse import urlparse, urlunparse
 import pytest
 from ebooklib import epub
 
-from fte import fte
+from fte.fte import main
 
 
 class TestFTE:
@@ -17,7 +17,7 @@ class TestFTE:
     # This fanfiction story is similar to the story above
     AO3_STORY_URL = "https://archiveofourown.org/works/518316/chapters/915532"
     AO3_EBOOK_NAME = (
-        "Seeing-the-real-you-(it's-not-what-I-imagined)-by-Rei.epub"
+        "Seeing-the-real-you-(it's-not-what-I-imagined)-by-Rei.epub"  # noqa
     )
 
     def setup_class(self):
@@ -26,6 +26,7 @@ class TestFTE:
 
     def teardown_class(self):
         Path(self.SP_EBOOK_NAME).unlink(missing_ok=True)
+        Path(self.AO3_EBOOK_NAME).unlink(missing_ok=True)
         for item in self.tmp_dir.iterdir():
             if item.is_file():
                 item.unlink()
@@ -46,19 +47,19 @@ class TestFTE:
         assert len(new_book.toc) == len(test_book.toc)
 
     def test_fte_typical_use_SP(self) -> None:
-        fte(self.SP_STORY_URL)
+        main(self.SP_STORY_URL)
 
         assert Path(self.SP_EBOOK_NAME).is_file()
         self._compare_books(self.SP_EBOOK_NAME, "tests/SB_pre_made_ebook")
 
     def test_fte_typical_use_AO3(self) -> None:
-        fte(self.AO3_STORY_URL)
+        main(self.AO3_STORY_URL)
 
         assert Path(self.AO3_EBOOK_NAME).is_file()
         self._compare_books(self.AO3_EBOOK_NAME, "tests/AO3_pre_made_ebook")
 
     def test_fte_save_to_dir(self) -> None:
-        fte(self.SP_STORY_URL, dst_dir=self.tmp_dir.name)
+        main(self.SP_STORY_URL, dst_dir=self.tmp_dir.name)
 
         assert (self.tmp_dir / self.SP_EBOOK_NAME).is_file()
         self._compare_books(
@@ -68,7 +69,7 @@ class TestFTE:
 
     def _test_fte_bad_url(self, bad_url, ex_msg_pattern) -> None:
         with pytest.raises(Exception, match=ex_msg_pattern):
-            fte(bad_url)
+            main(bad_url)
 
     def test_fte_bad_url_scheme(self) -> None:
         url_pieces = urlparse(self.SP_STORY_URL)._replace(scheme="fake")
