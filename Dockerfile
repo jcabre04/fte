@@ -2,10 +2,12 @@
 # Setting up chrome and chrome driver from:
 # https://nander.cc/using-selenium-within-a-docker-container
 
-FROM python:3.10
+FROM python:3.10-slim
 
 # Add chrome repository, install it, install chrome driver, update base image
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
+RUN apt-get -y update \
+    && apt-get -yq install wget gnupg gnupg2 gnupg1 curl \
+    && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
     && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list' \
     && apt-get -y update \ 
     && apt-get install -y google-chrome-stable \

@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   fte:
-    image: jcabre04/fte
+    image: jcabre04/fte:0.1
     container_name: fte-app
     restart: unless-stopped
     environment:
