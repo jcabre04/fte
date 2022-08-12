@@ -1,16 +1,15 @@
 # files to ignore
 .env
-.git
 
 *.epub
-
-__pycache__
 
 geckodriver.log
 geckodriver.exe
 
 # directories to ignore
 venv/
+__pycache__/
+.git/
 .tmpdir*/
 .vscode/
-.pytest_cache
+.pytest_cache/
