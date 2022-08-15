@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fte-service
+spec:
+  selector:
+    app: fte
+  type: LoadBalancer
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 42005
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fte-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: fte
+  template:
+    metadata:
+      labels:
+        app: fte
+    spec:
+      containers:
+        - name: fte-api
+          image: jcabre04/fte:0.1
+          env:
+            - name: UPLOAD_DIR
+              value: /app/uploads/
+            - name: WORKING_DIR
+              value: /app/
+            - name: WEB_DRIVER
+              value: chrome
