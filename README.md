@@ -54,6 +54,8 @@ The project contains a Kubernetes configuration file for easy deployment in a Ku
 ```
 kubectl apply -f ./kubernetes.yaml
 ```
+Deployment verified to work with AWS' EKS
+![AWS success](https://i.imgur.com/hDxgABe.png)
 
 ## Thanks!
 Shoutouts to:
