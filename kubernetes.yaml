@@ -27,7 +27,7 @@ spec:
     spec:
       containers:
         - name: fte-api
-          image: jcabre04/fte:0.1
+          image: jcabre04/fte:latest
           env:
             - name: UPLOAD_DIR
               value: /app/uploads/
