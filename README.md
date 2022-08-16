@@ -1,7 +1,7 @@
 # fanfiction-to-ebook
-fte is a simple tools that creates ebooks from online fanfiction by scraping their webpages. It can run as a standalone cli command, a local webapp, or a docker image. The primary use case for fte is to create content for local self-hosted (i.e., no access from outside home LAN) use.
+fte is a tool that creates ebooks from online fanfiction by scraping their webpages. It can run as a standalone cli command, a local webapp, a webapp deployed by docker, or as a webapp managed by Kubernetes. The primary use case for fte is to create content for local self-hosted (i.e., no access from outside home LAN) use.
 
-PLEASE NOTE: the webapp and docker image use Flask's development server to serve content. Do not use it for high volume or insecure traffic. 
+PLEASE NOTE: the docker image uses Flask's development server to serve content. Do not use it for high volume or insecure traffic (e.g., Internet-facing content). 
 
 Also, if you use this tool through the cli, you will need a firefox / chrome on your computer and need to download the latest gecko / chrome web driverto the code's directory.
 
@@ -49,7 +49,15 @@ Alternatively, use docker-compose with fte's docker-compose.yaml file:
 docker-compose up -d
 ```
 
+## Kubernetes
+The project contains a Kubernetes configuration file for easy deployment in a Kubernetes cluster. Assuming the cluster and kubectl were setup correclty, run the following command to deploy it:
+```
+kubectl apply -f ./kubernetes.yaml
+```
+Deployment verified to work with AWS' EKS
+![AWS success](https://i.imgur.com/hDxgABe.png)
+
 ## Thanks!
 Shoutouts to:
 - Nazli Ander and his [article](https://nander.cc/using-selenium-within-a-docker-container) for helping me find a docker image compatible with chrome and how to configure Selenium to use it! 
-- Academind's Maximilian Schwarzmüller and his [udemy course](https://www.udemy.com/course/docker-kubernetes-the-practical-guide/) for a lot of Docker clarification!
+- Academind's Maximilian Schwarzmüller and his [udemy course](https://www.udemy.com/course/docker-kubernetes-the-practical-guide/) for a lot of Docker and Kubernetes clarification!
