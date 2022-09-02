@@ -11,7 +11,7 @@ from ebooklib import epub
 
 def create_epub(
     title: str, author: str, summary: Tag, chapters: CHAPTER, cover: str
-) -> None:
+) -> tuple[epub.EpubBook, str]:
     """Following the ebooklib docs, assemble and write ebook"""
     # To ensure every book has unique id, making hash with title and author
     book_id = sha256(bytes(f"{title} by {author}", "utf-8")).hexdigest()
@@ -63,7 +63,7 @@ def create_epub(
         uid="style_nav",
         file_name="style/nav.css",
         media_type="text/css",
-        content=style,
+        content=str.encode(style),
     )
 
     book.add_item(nav_css)
